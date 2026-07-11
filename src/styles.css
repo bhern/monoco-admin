@@ -337,6 +337,45 @@ td span {
   height: 16px;
 }
 
+.category-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.category-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.category-row {
+  border: 1px solid #dedbd2;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.category-row-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.category-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1.5fr 1fr 1fr 96px;
+}
+
+.category-empty {
+  border: 1px dashed #d4d1c8;
+  border-radius: 8px;
+  color: #716f68;
+  margin-top: 16px;
+  padding: 16px;
+}
+
 .login-page {
   display: grid;
   min-height: 100vh;
@@ -412,7 +451,8 @@ td span {
   }
 
   .editor-grid,
-  .two-column {
+  .two-column,
+  .category-fields {
     grid-template-columns: 1fr;
   }
 }

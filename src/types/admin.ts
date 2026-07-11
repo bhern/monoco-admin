@@ -43,6 +43,28 @@ export interface CallStatusOption {
   description?: string | null;
 }
 
+export interface CallCategory {
+  id: string;
+  callId: string;
+  key: string;
+  label: string;
+  slug: string;
+  description?: string | null;
+  sortOrder: number;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CallCategoryPayload {
+  key?: string;
+  label?: string;
+  slug?: string;
+  description?: string | null;
+  sortOrder?: number;
+  metadata?: Record<string, unknown>;
+}
+
 export interface CallPayload {
   title: string;
   slug: string;

@@ -1,5 +1,7 @@
 import type {
   AdminSession,
+  CallCategory,
+  CallCategoryPayload,
   CallPayload,
   CallStatusOption,
   CallSummary,
@@ -94,6 +96,55 @@ export async function updateCall(
 
 export async function listCallStatuses(token: string): Promise<CallStatusOption[]> {
   return request<CallStatusOption[]>("/api/admin/call-statuses", { token });
+}
+
+export async function listCallCategories(token: string, callId: string): Promise<CallCategory[]> {
+  return request<CallCategory[]>(`/api/admin/calls/${callId}/categories`, { token });
+}
+
+export async function createDefaultCallCategories(
+  token: string,
+  callId: string
+): Promise<CallCategory[]> {
+  const result = await request<{ categories: CallCategory[] }>(
+    `/api/admin/calls/${callId}/categories/defaults`,
+    {
+      token,
+      method: "POST",
+      body: JSON.stringify({})
+    }
+  );
+  return result.categories;
+}
+
+export async function createCallCategory(
+  token: string,
+  callId: string,
+  payload: CallCategoryPayload
+): Promise<CallCategory> {
+  const result = await request<{ category: CallCategory }>(`/api/admin/calls/${callId}/categories`, {
+    token,
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+  return result.category;
+}
+
+export async function updateCallCategory(
+  token: string,
+  callId: string,
+  categoryId: string,
+  payload: CallCategoryPayload
+): Promise<CallCategory> {
+  const result = await request<{ category: CallCategory }>(
+    `/api/admin/calls/${callId}/categories/${categoryId}`,
+    {
+      token,
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }
+  );
+  return result.category;
 }
 
 export async function listEntries(token: string, callId: string): Promise<EntrySummary[]> {

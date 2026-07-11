@@ -3,9 +3,17 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Save } from "@lucide/vue";
 import AppShell from "@/components/AppShell.vue";
-import { createCall, getCall, listCallStatuses, updateCall } from "@/services/api";
+import {
+  createDefaultCallCategories,
+  createCall,
+  getCall,
+  listCallCategories,
+  listCallStatuses,
+  updateCall,
+  updateCallCategory
+} from "@/services/api";
 import { useSessionStore } from "@/stores/session";
-import type { CallPayload, CallStatus, CallStatusOption } from "@/types/admin";
+import type { CallCategory, CallPayload, CallStatus, CallStatusOption } from "@/types/admin";
 
 const route = useRoute();
 const router = useRouter();
@@ -16,6 +24,11 @@ const saving = ref(false);
 const error = ref("");
 const notice = ref("");
 const statuses = ref<CallStatusOption[]>([]);
+const categories = ref<CallCategory[]>([]);
+const categoryError = ref("");
+const categoryNotice = ref("");
+const categoriesLoading = ref(false);
+const savingCategoryId = ref("");
 
 const callId = computed(() => {
   const value = route.params.callId;
@@ -79,7 +92,7 @@ function buildPayload(): CallPayload {
     guidelines: nullableText(form.guidelines),
     openAt: toIsoDateTime(form.openAt),
     closeAt: toIsoDateTime(form.closeAt),
-    deadlineAt: toIsoDateTime(form.deadlineAt),
+    deadlineAt: toIsoDateTime(form.closeAt),
     location: nullableText(form.location),
     maxEntriesPerArtist: form.maxEntriesPerArtist || null,
     publicGalleryEnabled: form.publicGalleryEnabled,
@@ -90,6 +103,21 @@ function buildPayload(): CallPayload {
       allowed_categories: ["people-presence", "nature-made", "human-made"]
     }
   };
+}
+
+async function loadCategoriesForCall(id: string) {
+  if (!session.token) return;
+
+  categoriesLoading.value = true;
+  categoryError.value = "";
+
+  try {
+    categories.value = await listCallCategories(session.token, id);
+  } catch (err) {
+    categoryError.value = err instanceof Error ? err.message : "Unable to load categories.";
+  } finally {
+    categoriesLoading.value = false;
+  }
 }
 
 async function load() {
@@ -164,6 +192,7 @@ async function load() {
       form.maxCategoriesPerAsset = call.assetRules?.max_categories_per_asset || 1;
       form.maxAssetsPerCategory = call.assetRules?.max_assets_per_category || 1;
       form.publicGalleryEnabled = Boolean(call.publicGalleryEnabled);
+      await loadCategoriesForCall(call.id);
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unable to load call.";
@@ -192,12 +221,57 @@ async function save() {
     notice.value = "Call saved.";
 
     if (isNew.value) {
-      router.replace(`/calls/${saved.id}`);
+      await router.replace(`/calls/${saved.id}`);
+      await loadCategoriesForCall(saved.id);
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unable to save call.";
   } finally {
     saving.value = false;
+  }
+}
+
+async function seedDefaultCategories() {
+  if (!session.token || !callId.value) return;
+
+  categoriesLoading.value = true;
+  categoryError.value = "";
+  categoryNotice.value = "";
+
+  try {
+    categories.value = await createDefaultCallCategories(session.token, callId.value);
+    categoryNotice.value = "Monthly challenge categories are ready.";
+  } catch (err) {
+    categoryError.value = err instanceof Error ? err.message : "Unable to create categories.";
+  } finally {
+    categoriesLoading.value = false;
+  }
+}
+
+async function saveCategory(category: CallCategory) {
+  if (!session.token || !callId.value) return;
+
+  savingCategoryId.value = category.id;
+  categoryError.value = "";
+  categoryNotice.value = "";
+
+  try {
+    const saved = await updateCallCategory(session.token, callId.value, category.id, {
+      key: category.key,
+      label: category.label,
+      slug: category.slug,
+      description: category.description || null,
+      sortOrder: category.sortOrder
+    });
+
+    categories.value = categories.value
+      .map((item) => (item.id === saved.id ? saved : item))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    categoryNotice.value = "Category saved.";
+  } catch (err) {
+    categoryError.value = err instanceof Error ? err.message : "Unable to save category.";
+  } finally {
+    savingCategoryId.value = "";
   }
 }
 
@@ -275,10 +349,6 @@ onMounted(load);
             <input v-model="form.closeAt" type="datetime-local" />
           </label>
         </div>
-        <label class="field">
-          <span>Deadline</span>
-          <input v-model="form.deadlineAt" type="datetime-local" />
-        </label>
       </section>
 
       <section class="panel">
@@ -329,8 +399,77 @@ onMounted(load);
       <section class="panel wide">
         <h2>Assets and categories</h2>
         <p class="muted">
-          Hero images, category thumbnails, examples, and category editing come next.
+          Category records control what each submitted image can be assigned to.
         </p>
+
+        <div v-if="isNew" class="category-empty">
+          Save the call before editing categories.
+        </div>
+
+        <template v-else>
+          <div class="category-toolbar">
+            <button
+              class="button subtle"
+              type="button"
+              :disabled="categoriesLoading"
+              @click="seedDefaultCategories"
+            >
+              {{ categoriesLoading ? "Working" : "Create monthly defaults" }}
+            </button>
+          </div>
+
+          <p v-if="categoryError" class="notice warning">{{ categoryError }}</p>
+          <p v-if="categoryNotice" class="notice success">{{ categoryNotice }}</p>
+
+          <div v-if="categoriesLoading && !categories.length" class="category-empty">
+            Loading categories...
+          </div>
+
+          <div v-else-if="categories.length" class="category-list">
+            <article v-for="category in categories" :key="category.id" class="category-row">
+              <div class="category-row-header">
+                <strong>{{ category.label || "Untitled category" }}</strong>
+                <button
+                  class="button subtle"
+                  type="button"
+                  :disabled="savingCategoryId === category.id"
+                  @click="saveCategory(category)"
+                >
+                  {{ savingCategoryId === category.id ? "Saving" : "Save category" }}
+                </button>
+              </div>
+
+              <div class="category-fields">
+                <label class="field">
+                  <span>Label</span>
+                  <input v-model="category.label" type="text" />
+                </label>
+                <label class="field">
+                  <span>Key</span>
+                  <input v-model="category.key" type="text" />
+                </label>
+                <label class="field">
+                  <span>Slug</span>
+                  <input v-model="category.slug" type="text" />
+                </label>
+                <label class="field">
+                  <span>Sort</span>
+                  <input v-model.number="category.sortOrder" type="number" min="0" />
+                </label>
+              </div>
+
+              <label class="field">
+                <span>Description</span>
+                <textarea v-model="category.description" rows="2"></textarea>
+              </label>
+            </article>
+          </div>
+
+          <div v-else class="category-empty">
+            No categories yet. Create the monthly defaults to add People & Presence,
+            Nature-made, and Human-made.
+          </div>
+        </template>
       </section>
     </form>
   </AppShell>
