@@ -1,5 +1,6 @@
 import type {
   AdminSession,
+  CallAsset,
   CallCategory,
   CallCategoryPayload,
   CallPayload,
@@ -92,6 +93,40 @@ export async function updateCall(
     body: JSON.stringify(payload)
   });
   return result.call;
+}
+
+export async function listCallAssets(token: string, callId: string): Promise<CallAsset[]> {
+  return request<CallAsset[]>(`/api/admin/calls/${callId}/assets`, { token });
+}
+
+export async function uploadCallAsset(
+  token: string,
+  callId: string,
+  payload: {
+    file: File;
+    assetRole: string;
+    callCategoryId?: string | null;
+    title?: string;
+    altText?: string;
+    caption?: string;
+    sortOrder?: number;
+  }
+): Promise<CallAsset> {
+  const formData = new FormData();
+  formData.set("file", payload.file);
+  formData.set("assetRole", payload.assetRole);
+  if (payload.callCategoryId) formData.set("callCategoryId", payload.callCategoryId);
+  if (payload.title) formData.set("title", payload.title);
+  if (payload.altText) formData.set("altText", payload.altText);
+  if (payload.caption) formData.set("caption", payload.caption);
+  if (payload.sortOrder !== undefined) formData.set("sortOrder", String(payload.sortOrder));
+
+  const result = await request<{ asset: CallAsset }>(`/api/admin/calls/${callId}/assets`, {
+    token,
+    method: "POST",
+    body: formData
+  });
+  return result.asset;
 }
 
 export async function listCallStatuses(token: string): Promise<CallStatusOption[]> {

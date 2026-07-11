@@ -8,13 +8,15 @@ import {
   createDefaultCallCategories,
   createCall,
   getCall,
+  listCallAssets,
   listCallCategories,
   listCallStatuses,
   updateCall,
-  updateCallCategory
+  updateCallCategory,
+  uploadCallAsset
 } from "@/services/api";
 import { useSessionStore } from "@/stores/session";
-import type { CallCategory, CallPayload, CallStatus, CallStatusOption } from "@/types/admin";
+import type { CallAsset, CallCategory, CallPayload, CallStatus, CallStatusOption } from "@/types/admin";
 
 const route = useRoute();
 const router = useRouter();
@@ -31,6 +33,10 @@ const categoryNotice = ref("");
 const categoriesLoading = ref(false);
 const savingCategoryId = ref("");
 const creatingCategory = ref(false);
+const assets = ref<CallAsset[]>([]);
+const assetError = ref("");
+const assetNotice = ref("");
+const uploadingAssetKey = ref("");
 
 const callId = computed(() => {
   const value = route.params.callId;
@@ -130,6 +136,18 @@ async function loadCategoriesForCall(id: string) {
   }
 }
 
+async function loadAssetsForCall(id: string) {
+  if (!session.token) return;
+
+  assetError.value = "";
+
+  try {
+    assets.value = await listCallAssets(session.token, id);
+  } catch (err) {
+    assetError.value = err instanceof Error ? err.message : "Unable to load call assets.";
+  }
+}
+
 async function load() {
   if (!session.token) return;
 
@@ -203,6 +221,7 @@ async function load() {
       form.maxAssetsPerCategory = call.assetRules?.max_assets_per_category || 1;
       form.publicGalleryEnabled = Boolean(call.publicGalleryEnabled);
       await loadCategoriesForCall(call.id);
+      await loadAssetsForCall(call.id);
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unable to load call.";
@@ -233,11 +252,60 @@ async function save() {
     if (isNew.value) {
       await router.replace(`/calls/${saved.id}`);
       await loadCategoriesForCall(saved.id);
+      await loadAssetsForCall(saved.id);
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unable to save call.";
   } finally {
     saving.value = false;
+  }
+}
+
+function assetsFor(role: string, callCategoryId?: string | null) {
+  return assets.value
+    .filter((asset) => {
+      const sameRole = asset.assetRole === role;
+      const sameCategory = callCategoryId
+        ? asset.callCategoryId === callCategoryId
+        : !asset.callCategoryId;
+      return sameRole && sameCategory;
+    })
+    .sort((a, b) => b.createdAt?.localeCompare(a.createdAt || "") || 0);
+}
+
+function latestAsset(role: string, callCategoryId?: string | null) {
+  return assetsFor(role, callCategoryId)[0] || null;
+}
+
+async function uploadAsset(event: Event, assetRole: string, callCategoryId?: string | null) {
+  if (!session.token || !callId.value) return;
+
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const uploadKey = `${callCategoryId || "call"}:${assetRole}`;
+  uploadingAssetKey.value = uploadKey;
+  assetError.value = "";
+  assetNotice.value = "";
+
+  try {
+    const asset = await uploadCallAsset(session.token, callId.value, {
+      file,
+      assetRole,
+      callCategoryId,
+      title: file.name,
+      altText: file.name,
+      sortOrder: assetsFor(assetRole, callCategoryId).length * 10
+    });
+
+    assets.value = [asset, ...assets.value];
+    assetNotice.value = "Image uploaded.";
+  } catch (err) {
+    assetError.value = err instanceof Error ? err.message : "Unable to upload image.";
+  } finally {
+    uploadingAssetKey.value = "";
+    input.value = "";
   }
 }
 
@@ -460,6 +528,31 @@ onMounted(load);
         </div>
 
         <template v-else>
+          <p v-if="assetError" class="notice warning">{{ assetError }}</p>
+          <p v-if="assetNotice" class="notice success">{{ assetNotice }}</p>
+
+          <div class="asset-upload-row">
+            <div>
+              <strong>Call hero</strong>
+              <p class="helper-text">Main public image for this call.</p>
+            </div>
+            <img
+              v-if="latestAsset('call-hero')?.publicUrl"
+              class="asset-thumb"
+              :src="latestAsset('call-hero')?.publicUrl || ''"
+              alt=""
+            />
+            <label class="button subtle file-button">
+              {{ uploadingAssetKey === "call:call-hero" ? "Uploading" : "Upload hero" }}
+              <input
+                type="file"
+                accept="image/*"
+                :disabled="uploadingAssetKey === 'call:call-hero'"
+                @change="uploadAsset($event, 'call-hero')"
+              />
+            </label>
+          </div>
+
           <div class="category-toolbar">
             <button
               class="button subtle"
@@ -550,6 +643,35 @@ onMounted(load);
                 <span>Description</span>
                 <textarea v-model="category.description" rows="2"></textarea>
               </label>
+
+              <div class="category-media-grid">
+                <div
+                  v-for="assetRole in ['category-hero', 'category-thumb', 'example']"
+                  :key="assetRole"
+                  class="asset-slot"
+                >
+                  <img
+                    v-if="latestAsset(assetRole, category.id)?.publicUrl"
+                    class="asset-preview"
+                    :src="latestAsset(assetRole, category.id)?.publicUrl || ''"
+                    alt=""
+                  />
+                  <div v-else class="asset-preview empty">No image</div>
+                  <label class="button subtle file-button">
+                    {{
+                      uploadingAssetKey === `${category.id}:${assetRole}`
+                        ? "Uploading"
+                        : assetRole.replace("-", " ")
+                    }}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      :disabled="uploadingAssetKey === `${category.id}:${assetRole}`"
+                      @change="uploadAsset($event, assetRole, category.id)"
+                    />
+                  </label>
+                </div>
+              </div>
             </article>
           </div>
 

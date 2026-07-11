@@ -65,6 +65,28 @@ export interface CallCategoryPayload {
   metadata?: Record<string, unknown>;
 }
 
+export interface CallAsset {
+  id: string;
+  callId: string;
+  callCategoryId?: string | null;
+  assetType: string;
+  assetRole: string;
+  title?: string | null;
+  altText?: string | null;
+  caption?: string | null;
+  originalFilename?: string | null;
+  r2Key?: string | null;
+  publicUrl?: string | null;
+  mimeType?: string | null;
+  fileSizeBytes?: number | null;
+  width?: number | null;
+  height?: number | null;
+  sortOrder: number;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface CallPayload {
   title: string;
   slug: string;
