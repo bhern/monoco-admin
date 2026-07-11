@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { Save } from "@lucide/vue";
 import AppShell from "@/components/AppShell.vue";
 import {
+  createCallCategory,
   createDefaultCallCategories,
   createCall,
   getCall,
@@ -29,6 +30,7 @@ const categoryError = ref("");
 const categoryNotice = ref("");
 const categoriesLoading = ref(false);
 const savingCategoryId = ref("");
+const creatingCategory = ref(false);
 
 const callId = computed(() => {
   const value = route.params.callId;
@@ -54,6 +56,14 @@ const form = reactive({
   maxCategoriesPerAsset: 1,
   maxAssetsPerCategory: 1,
   publicGalleryEnabled: true
+});
+
+const newCategory = reactive({
+  label: "",
+  key: "",
+  slug: "",
+  description: "",
+  sortOrder: 40
 });
 
 function toKebabCase(value: string) {
@@ -248,6 +258,49 @@ async function seedDefaultCategories() {
   }
 }
 
+function resetNewCategory() {
+  newCategory.label = "";
+  newCategory.key = "";
+  newCategory.slug = "";
+  newCategory.description = "";
+  newCategory.sortOrder =
+    categories.value.length > 0
+      ? Math.max(...categories.value.map((category) => category.sortOrder)) + 10
+      : 10;
+}
+
+async function addCategory() {
+  if (!session.token || !callId.value) return;
+
+  const label = newCategory.label.trim();
+  if (!label) {
+    categoryError.value = "Category label is required.";
+    return;
+  }
+
+  creatingCategory.value = true;
+  categoryError.value = "";
+  categoryNotice.value = "";
+
+  try {
+    const category = await createCallCategory(session.token, callId.value, {
+      label,
+      key: toKebabCase(newCategory.key || label),
+      slug: toKebabCase(newCategory.slug || newCategory.key || label),
+      description: nullableText(newCategory.description),
+      sortOrder: newCategory.sortOrder || 0
+    });
+
+    categories.value = [...categories.value, category].sort((a, b) => a.sortOrder - b.sortOrder);
+    resetNewCategory();
+    categoryNotice.value = "Category added.";
+  } catch (err) {
+    categoryError.value = err instanceof Error ? err.message : "Unable to add category.";
+  } finally {
+    creatingCategory.value = false;
+  }
+}
+
 async function saveCategory(category: CallCategory) {
   if (!session.token || !callId.value) return;
 
@@ -420,6 +473,41 @@ onMounted(load);
 
           <p v-if="categoryError" class="notice warning">{{ categoryError }}</p>
           <p v-if="categoryNotice" class="notice success">{{ categoryNotice }}</p>
+
+          <div class="category-create">
+            <div class="category-fields">
+              <label class="field">
+                <span>New category</span>
+                <input v-model="newCategory.label" type="text" placeholder="Architecture" />
+              </label>
+              <label class="field">
+                <span>Key</span>
+                <input v-model="newCategory.key" type="text" placeholder="architecture" />
+              </label>
+              <label class="field">
+                <span>Slug</span>
+                <input v-model="newCategory.slug" type="text" placeholder="architecture" />
+              </label>
+              <label class="field">
+                <span>Sort</span>
+                <input v-model.number="newCategory.sortOrder" type="number" min="0" />
+              </label>
+            </div>
+            <label class="field">
+              <span>Description</span>
+              <textarea v-model="newCategory.description" rows="2"></textarea>
+            </label>
+            <div class="category-create-actions">
+              <button
+                class="button primary"
+                type="button"
+                :disabled="creatingCategory || !newCategory.label.trim()"
+                @click="addCategory"
+              >
+                {{ creatingCategory ? "Adding" : "Add category" }}
+              </button>
+            </div>
+          </div>
 
           <div v-if="categoriesLoading && !categories.length" class="category-empty">
             Loading categories...
