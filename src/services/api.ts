@@ -1,4 +1,10 @@
-import type { AdminSession, CallSummary, EntrySummary } from "@/types/admin";
+import type {
+  AdminSession,
+  CallPayload,
+  CallStatusOption,
+  CallSummary,
+  EntrySummary
+} from "@/types/admin";
 
 const API_BASE = import.meta.env.VITE_MONOCO_API_URL || "https://monoco-api.ben-505.workers.dev";
 
@@ -27,7 +33,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    const message = data?.error || data?.message || `Request failed with ${response.status}`;
+    const message =
+      data?.error ||
+      data?.message ||
+      (Array.isArray(data?.errors) ? data.errors.join(", ") : "") ||
+      `Request failed with ${response.status}`;
     throw new Error(message);
   }
 
@@ -54,6 +64,36 @@ export async function login(passcode: string): Promise<AdminSession> {
 
 export async function listCalls(token: string): Promise<CallSummary[]> {
   return request<CallSummary[]>("/api/admin/calls", { token });
+}
+
+export async function getCall(token: string, callId: string): Promise<CallSummary> {
+  return request<CallSummary>(`/api/admin/calls/${callId}`, { token });
+}
+
+export async function createCall(token: string, payload: CallPayload): Promise<CallSummary> {
+  const result = await request<{ call: CallSummary }>("/api/admin/calls", {
+    token,
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+  return result.call;
+}
+
+export async function updateCall(
+  token: string,
+  callId: string,
+  payload: Partial<CallPayload>
+): Promise<CallSummary> {
+  const result = await request<{ call: CallSummary }>(`/api/admin/calls/${callId}`, {
+    token,
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+  return result.call;
+}
+
+export async function listCallStatuses(token: string): Promise<CallStatusOption[]> {
+  return request<CallStatusOption[]>("/api/admin/call-statuses", { token });
 }
 
 export async function listEntries(token: string, callId: string): Promise<EntrySummary[]> {
