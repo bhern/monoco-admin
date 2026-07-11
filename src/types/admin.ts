@@ -20,9 +20,17 @@ export interface CallSummary {
   currency?: string | null;
   maxEntriesPerArtist?: number | null;
   publicGalleryEnabled?: boolean;
+  assetRules?: CallAssetRules;
   entryCount?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CallAssetRules {
+  max_assets_per_entry?: number | null;
+  max_categories_per_asset?: number | null;
+  max_assets_per_category?: number | null;
+  allowed_categories?: string[];
 }
 
 export interface CallStatusOption {
@@ -49,6 +57,7 @@ export interface CallPayload {
   location?: string | null;
   maxEntriesPerArtist?: number | null;
   publicGalleryEnabled?: boolean;
+  assetRules?: CallAssetRules;
 }
 
 export interface EntrySummary {

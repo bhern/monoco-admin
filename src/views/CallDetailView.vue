@@ -37,6 +37,9 @@ const form = reactive({
   deadlineAt: "",
   location: "",
   maxEntriesPerArtist: 1,
+  maxAssetsPerEntry: 3,
+  maxCategoriesPerAsset: 1,
+  maxAssetsPerCategory: 1,
   publicGalleryEnabled: true
 });
 
@@ -79,7 +82,13 @@ function buildPayload(): CallPayload {
     deadlineAt: toIsoDateTime(form.deadlineAt),
     location: nullableText(form.location),
     maxEntriesPerArtist: form.maxEntriesPerArtist || null,
-    publicGalleryEnabled: form.publicGalleryEnabled
+    publicGalleryEnabled: form.publicGalleryEnabled,
+    assetRules: {
+      max_assets_per_entry: form.maxAssetsPerEntry || null,
+      max_categories_per_asset: form.maxCategoriesPerAsset || null,
+      max_assets_per_category: form.maxAssetsPerCategory || null,
+      allowed_categories: ["people-presence", "nature-made", "human-made"]
+    }
   };
 }
 
@@ -151,6 +160,9 @@ async function load() {
       form.deadlineAt = toInputDateTime(call.deadlineAt);
       form.location = call.location || "";
       form.maxEntriesPerArtist = call.maxEntriesPerArtist || 1;
+      form.maxAssetsPerEntry = call.assetRules?.max_assets_per_entry || 3;
+      form.maxCategoriesPerAsset = call.assetRules?.max_categories_per_asset || 1;
+      form.maxAssetsPerCategory = call.assetRules?.max_assets_per_category || 1;
       form.publicGalleryEnabled = Boolean(call.publicGalleryEnabled);
     }
   } catch (err) {
@@ -286,15 +298,32 @@ onMounted(load);
       </section>
 
       <section class="panel">
-        <h2>Configuration</h2>
+        <h2>Entry rules</h2>
         <label class="field">
           <span>Call type</span>
           <input v-model="form.callType" type="text" required />
+        </label>
+        <div class="two-column">
+          <label class="field">
+            <span>Images per entry</span>
+            <input v-model.number="form.maxAssetsPerEntry" type="number" min="1" />
+          </label>
+          <label class="field">
+            <span>Categories per image</span>
+            <input v-model.number="form.maxCategoriesPerAsset" type="number" min="1" />
+          </label>
+        </div>
+        <label class="field">
+          <span>Images per category</span>
+          <input v-model.number="form.maxAssetsPerCategory" type="number" min="1" />
         </label>
         <label class="checkbox-field">
           <input v-model="form.publicGalleryEnabled" type="checkbox" />
           <span>Public gallery enabled</span>
         </label>
+        <p class="helper-text">
+          Current setup: one artist entry packet, up to 3 images, one image per category.
+        </p>
       </section>
 
       <section class="panel wide">
