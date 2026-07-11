@@ -277,6 +277,12 @@ function latestAsset(role: string, callCategoryId?: string | null) {
   return assetsFor(role, callCategoryId)[0] || null;
 }
 
+function latestCategoryAsset(callCategoryId: string) {
+  return assets.value
+    .filter((asset) => asset.callCategoryId === callCategoryId)
+    .sort((a, b) => b.createdAt?.localeCompare(a.createdAt || "") || 0)[0] || null;
+}
+
 async function uploadAsset(event: Event, assetRole: string, callCategoryId?: string | null) {
   if (!session.token || !callId.value) return;
 
@@ -644,33 +650,23 @@ onMounted(load);
                 <textarea v-model="category.description" rows="2"></textarea>
               </label>
 
-              <div class="category-media-grid">
-                <div
-                  v-for="assetRole in ['category-hero', 'category-thumb', 'example']"
-                  :key="assetRole"
-                  class="asset-slot"
-                >
-                  <img
-                    v-if="latestAsset(assetRole, category.id)?.publicUrl"
-                    class="asset-preview"
-                    :src="latestAsset(assetRole, category.id)?.publicUrl || ''"
-                    alt=""
+              <div class="category-asset-row">
+                <img
+                  v-if="latestCategoryAsset(category.id)?.publicUrl"
+                  class="asset-thumb"
+                  :src="latestCategoryAsset(category.id)?.publicUrl || ''"
+                  alt=""
+                />
+                <div v-else class="asset-thumb empty">No image</div>
+                <label class="button icon file-button" title="Add category image">
+                  {{ uploadingAssetKey === `${category.id}:category-image` ? "..." : "+" }}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    :disabled="uploadingAssetKey === `${category.id}:category-image`"
+                    @change="uploadAsset($event, 'category-image', category.id)"
                   />
-                  <div v-else class="asset-preview empty">No image</div>
-                  <label class="button subtle file-button">
-                    {{
-                      uploadingAssetKey === `${category.id}:${assetRole}`
-                        ? "Uploading"
-                        : assetRole.replace("-", " ")
-                    }}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      :disabled="uploadingAssetKey === `${category.id}:${assetRole}`"
-                      @change="uploadAsset($event, assetRole, category.id)"
-                    />
-                  </label>
-                </div>
+                </label>
               </div>
             </article>
           </div>

@@ -158,8 +158,18 @@ textarea {
 }
 
 .button.subtle {
-  width: 38px;
+  background: #f7f6f1;
+  color: #161616;
+  min-width: 38px;
+  padding: 0 12px;
+}
+
+.button.icon {
+  font-size: 22px;
+  font-weight: 700;
+  min-width: 38px;
   padding: 0;
+  width: 38px;
 }
 
 .button:disabled {
@@ -373,8 +383,7 @@ td span {
   padding: 16px;
 }
 
-.asset-thumb,
-.asset-preview {
+.asset-thumb {
   aspect-ratio: 4 / 3;
   background: #f2f0ea;
   border: 1px solid #dedbd2;
@@ -387,24 +396,19 @@ td span {
   max-width: 120px;
 }
 
-.category-media-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 16px;
-}
-
-.asset-slot {
-  display: grid;
-  gap: 10px;
-}
-
-.asset-preview.empty {
+.asset-thumb.empty {
   align-items: center;
   color: #716f68;
   display: grid;
   font-size: 13px;
   place-items: center;
+}
+
+.category-asset-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .file-button {
@@ -526,8 +530,7 @@ td span {
   .editor-grid,
   .two-column,
   .category-fields,
-  .asset-upload-row,
-  .category-media-grid {
+  .asset-upload-row {
     grid-template-columns: 1fr;
   }
 }
