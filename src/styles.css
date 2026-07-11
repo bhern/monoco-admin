@@ -157,6 +157,13 @@ textarea {
   color: #ffffff;
 }
 
+.button.publish {
+  border-color: #c99618;
+  background: #f2b72e;
+  color: #161616;
+  font-weight: 700;
+}
+
 .button.subtle {
   background: #f7f6f1;
   color: #161616;
@@ -179,6 +186,13 @@ textarea {
 
 .full-width {
   width: 100%;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .toolbar,
@@ -316,6 +330,12 @@ td span {
   color: #4b4943;
   font-size: 13px;
   font-weight: 700;
+}
+
+.field-note {
+  color: #716f68;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .field input,

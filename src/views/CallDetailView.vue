@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Save } from "@lucide/vue";
+import { RadioTower, Save } from "@lucide/vue";
 import AppShell from "@/components/AppShell.vue";
 import SingleImageUploader, {
   type ImageAsset,
@@ -29,6 +29,7 @@ const session = useSessionStore();
 
 const loading = ref(false);
 const saving = ref(false);
+const publishing = ref(false);
 const error = ref("");
 const notice = ref("");
 const statuses = ref<CallStatusOption[]>([]);
@@ -49,6 +50,10 @@ const callId = computed(() => {
 });
 const isNew = computed(() => route.name === "call-new" || !callId.value);
 const canSave = computed(() => Boolean(form.title.trim() && form.slug.trim()));
+const statusDetails = computed(() => statuses.value.find((status) => status.key === form.status));
+const canPublish = computed(
+  () => !isNew.value && form.status !== "open" && canSave.value && !saving.value && !publishing.value
+);
 
 const form = reactive({
   title: "",
@@ -266,6 +271,32 @@ async function save() {
   }
 }
 
+async function publishCall() {
+  if (!session.token || !callId.value) return;
+  if (!canSave.value) {
+    error.value = "Title and slug are required before publishing.";
+    return;
+  }
+
+  publishing.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const payload = {
+      ...buildPayload(),
+      status: "open" as CallStatus
+    };
+    const saved = await updateCall(session.token, callId.value, payload);
+    form.status = saved.status || "open";
+    notice.value = "Call published.";
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Unable to publish call.";
+  } finally {
+    publishing.value = false;
+  }
+}
+
 function assetsFor(role: string, callCategoryId?: string | null) {
   return assets.value
     .filter((asset) => {
@@ -452,10 +483,22 @@ onMounted(load);
   <AppShell>
     <template #title>{{ isNew ? "New call" : "Call editor" }}</template>
     <template #actions>
-      <button class="button primary" type="button" :disabled="saving || !canSave" @click="save">
-        <Save :size="16" />
-        {{ saving ? "Saving" : "Save" }}
-      </button>
+      <div class="action-group">
+        <button
+          v-if="!isNew && form.status !== 'open'"
+          class="button publish"
+          type="button"
+          :disabled="!canPublish"
+          @click="publishCall"
+        >
+          <RadioTower :size="16" />
+          {{ publishing ? "Publishing" : "Publish" }}
+        </button>
+        <button class="button primary" type="button" :disabled="saving || !canSave" @click="save">
+          <Save :size="16" />
+          {{ saving ? "Saving" : "Save" }}
+        </button>
+      </div>
     </template>
 
     <p v-if="error" class="notice warning">{{ error }}</p>
@@ -496,6 +539,10 @@ onMounted(load);
                 {{ status.label }}
               </option>
             </select>
+            <small v-if="statusDetails" class="field-note">
+              {{ statusDetails.isPublic ? "Visible publicly." : "Hidden from public pages." }}
+              {{ statusDetails.acceptsEntries ? "Accepting entries." : "Not accepting entries." }}
+            </small>
           </label>
           <label class="field">
             <span>Entries per artist</span>
