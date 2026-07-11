@@ -22,6 +22,7 @@ const callId = computed(() => {
   return typeof value === "string" ? value : null;
 });
 const isNew = computed(() => route.name === "call-new" || !callId.value);
+const canSave = computed(() => Boolean(form.title.trim() && form.slug.trim()));
 
 const form = reactive({
   title: "",
@@ -89,7 +90,52 @@ async function load() {
   error.value = "";
 
   try {
-    statuses.value = await listCallStatuses(session.token);
+    try {
+      statuses.value = await listCallStatuses(session.token);
+    } catch {
+      statuses.value = [
+        {
+          key: "draft",
+          label: "Draft",
+          sortOrder: 10,
+          isPublic: false,
+          acceptsEntries: false,
+          isTerminal: false
+        },
+        {
+          key: "scheduled",
+          label: "Scheduled",
+          sortOrder: 20,
+          isPublic: true,
+          acceptsEntries: false,
+          isTerminal: false
+        },
+        {
+          key: "open",
+          label: "Open",
+          sortOrder: 30,
+          isPublic: true,
+          acceptsEntries: true,
+          isTerminal: false
+        },
+        {
+          key: "closed",
+          label: "Closed",
+          sortOrder: 40,
+          isPublic: true,
+          acceptsEntries: false,
+          isTerminal: true
+        },
+        {
+          key: "archived",
+          label: "Archived",
+          sortOrder: 50,
+          isPublic: false,
+          acceptsEntries: false,
+          isTerminal: true
+        }
+      ];
+    }
 
     if (!isNew.value && callId.value) {
       const call = await getCall(session.token, callId.value);
@@ -116,6 +162,10 @@ async function load() {
 
 async function save() {
   if (!session.token) return;
+  if (!canSave.value) {
+    error.value = "Title and slug are required.";
+    return;
+  }
 
   saving.value = true;
   error.value = "";
@@ -153,7 +203,7 @@ onMounted(load);
   <AppShell>
     <template #title>{{ isNew ? "New call" : "Call editor" }}</template>
     <template #actions>
-      <button class="button primary" type="button" :disabled="saving || loading" @click="save">
+      <button class="button primary" type="button" :disabled="saving || !canSave" @click="save">
         <Save :size="16" />
         {{ saving ? "Saving" : "Save" }}
       </button>
@@ -199,7 +249,7 @@ onMounted(load);
             </select>
           </label>
           <label class="field">
-            <span>Entry limit</span>
+            <span>Entries per artist</span>
             <input v-model.number="form.maxEntriesPerArtist" type="number" min="1" />
           </label>
         </div>
