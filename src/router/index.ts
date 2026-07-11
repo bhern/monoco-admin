@@ -3,6 +3,7 @@ import { useSessionStore } from "@/stores/session";
 import CallsView from "@/views/CallsView.vue";
 import CallDetailView from "@/views/CallDetailView.vue";
 import EntryDetailView from "@/views/EntryDetailView.vue";
+import EntriesView from "@/views/EntriesView.vue";
 import LoginView from "@/views/LoginView.vue";
 import SettingsView from "@/views/SettingsView.vue";
 
@@ -14,7 +15,8 @@ export const router = createRouter({
     { path: "/calls", name: "calls", component: CallsView },
     { path: "/calls/new", name: "call-new", component: CallDetailView },
     { path: "/calls/:callId", name: "call-detail", component: CallDetailView },
-    { path: "/calls/:callId/entries", name: "call-entries", component: CallsView },
+    { path: "/calls/:callId/entries", name: "call-entries", component: EntriesView },
+    { path: "/entries", name: "entries", component: EntriesView },
     { path: "/entries/:entryId", name: "entry-detail", component: EntryDetailView },
     { path: "/settings", name: "settings", component: SettingsView }
   ]

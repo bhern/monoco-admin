@@ -470,6 +470,90 @@ td span {
   padding: 16px;
 }
 
+.entry-list {
+  display: grid;
+  gap: 16px;
+}
+
+.entry-card {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  border: 1px solid #d9d7cf;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.entry-thumb {
+  aspect-ratio: 4 / 3;
+  background: #f2f0ea;
+  border: 1px solid #dedbd2;
+  border-radius: 6px;
+  color: #716f68;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+}
+
+.entry-thumb img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.entry-body {
+  min-width: 0;
+}
+
+.entry-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.entry-heading h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.entry-meta {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px 0 0;
+}
+
+.entry-meta div {
+  min-width: 0;
+}
+
+.entry-meta dt {
+  color: #716f68;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.entry-meta dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.entry-statement {
+  color: #4b4943;
+  line-height: 1.5;
+  margin-top: 16px;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 .login-page {
   display: grid;
   min-height: 100vh;
@@ -548,6 +632,8 @@ td span {
   .two-column,
   .category-fields,
   .single-image-uploader,
+  .entry-card,
+  .entry-meta,
   .single-image-uploader.compact {
     grid-template-columns: 1fr;
   }

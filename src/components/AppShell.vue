@@ -17,7 +17,7 @@ const session = useSessionStore();
 
 const navItems = [
   { label: "Calls", to: "/calls", icon: GalleryHorizontalEnd },
-  { label: "Entries", to: "/calls", icon: FileImage },
+  { label: "Entries", to: "/entries", icon: FileImage },
   { label: "Drafts", to: "/calls?status=draft", icon: SquarePen },
   { label: "Archive", to: "/calls?status=archived", icon: Archive },
   { label: "Settings", to: "/settings", icon: Settings }

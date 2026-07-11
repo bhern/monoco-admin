@@ -189,6 +189,20 @@ export async function updateCallCategory(
   return result.category;
 }
 
-export async function listEntries(token: string, callId: string): Promise<EntrySummary[]> {
-  return request<EntrySummary[]>(`/api/admin/calls/${callId}/entries`, { token });
+export async function listEntries(token: string, callId?: string | null): Promise<EntrySummary[]> {
+  const path = callId ? `/api/admin/calls/${callId}/entries` : "/api/admin/entries";
+  return request<EntrySummary[]>(path, { token });
+}
+
+export async function updateEntryStatus(
+  token: string,
+  entryId: string,
+  status: string
+): Promise<EntrySummary> {
+  const result = await request<{ entry: EntrySummary }>(`/api/admin/entries/${entryId}`, {
+    token,
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+  return result.entry;
 }

@@ -107,10 +107,30 @@ export interface CallPayload {
 export interface EntrySummary {
   id: string;
   entryId: string;
+  callId?: string;
+  callTitle?: string | null;
+  callSlug?: string | null;
+  artistId?: string | null;
   artistName?: string | null;
   artistEmail?: string | null;
+  artistInstagram?: string | null;
   status: string;
+  title?: string | null;
+  statement?: string | null;
+  location?: string | null;
   submittedAt?: string | null;
+  newsletterOptIn?: boolean;
+  image?: {
+    id: string;
+    url: string;
+    title?: string | null;
+    status?: string;
+  } | null;
+  categories?: Array<{
+    id: string;
+    slug: string;
+    label: string;
+  }>;
   assetCount?: number;
 }
 
