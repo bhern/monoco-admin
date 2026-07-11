@@ -129,6 +129,13 @@ export async function uploadCallAsset(
   return result.asset;
 }
 
+export async function deleteCallAsset(token: string, callId: string, assetId: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/admin/calls/${callId}/assets/${assetId}`, {
+    token,
+    method: "DELETE"
+  });
+}
+
 export async function listCallStatuses(token: string): Promise<CallStatusOption[]> {
   return request<CallStatusOption[]>("/api/admin/call-statuses", { token });
 }

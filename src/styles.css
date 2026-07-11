@@ -372,7 +372,7 @@ td span {
   margin-top: 14px;
 }
 
-.asset-upload-row {
+.single-image-uploader {
   align-items: center;
   border: 1px solid #e4e1d8;
   border-radius: 8px;
@@ -383,7 +383,11 @@ td span {
   padding: 16px;
 }
 
-.asset-thumb {
+.single-image-uploader.compact {
+  grid-template-columns: minmax(0, 1fr) 120px auto;
+}
+
+.single-image-preview {
   aspect-ratio: 4 / 3;
   background: #f2f0ea;
   border: 1px solid #dedbd2;
@@ -392,11 +396,11 @@ td span {
   width: 100%;
 }
 
-.asset-thumb {
+.single-image-preview {
   max-width: 120px;
 }
 
-.asset-thumb.empty {
+.single-image-preview.empty {
   align-items: center;
   color: #716f68;
   display: grid;
@@ -404,26 +408,19 @@ td span {
   place-items: center;
 }
 
-.category-asset-row {
-  align-items: center;
+.single-image-actions {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
 }
 
-.file-button {
-  cursor: pointer;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
+.single-image-input {
+  display: none;
 }
 
-.file-button input {
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  width: 1px;
+.button.danger {
+  border-color: #e1c4b7;
+  background: #fff7f3;
+  color: #8a3514;
 }
 
 .category-row {
@@ -530,7 +527,8 @@ td span {
   .editor-grid,
   .two-column,
   .category-fields,
-  .asset-upload-row {
+  .single-image-uploader,
+  .single-image-uploader.compact {
     grid-template-columns: 1fr;
   }
 }

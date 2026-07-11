@@ -3,10 +3,15 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Save } from "@lucide/vue";
 import AppShell from "@/components/AppShell.vue";
+import SingleImageUploader, {
+  type ImageAsset,
+  type UploadContext
+} from "@/components/SingleImageUploader.vue";
 import {
   createCallCategory,
   createDefaultCallCategories,
   createCall,
+  deleteCallAsset,
   getCall,
   listCallAssets,
   listCallCategories,
@@ -283,14 +288,27 @@ function latestCategoryAsset(callCategoryId: string) {
     .sort((a, b) => b.createdAt?.localeCompare(a.createdAt || "") || 0)[0] || null;
 }
 
-async function uploadAsset(event: Event, assetRole: string, callCategoryId?: string | null) {
+function toImageAsset(asset?: CallAsset | null): ImageAsset | null {
+  if (!asset) return null;
+  return {
+    id: asset.id,
+    publicUrl: asset.publicUrl,
+    altText: asset.altText,
+    title: asset.title,
+    fileName: asset.originalFilename || undefined
+  };
+}
+
+function assetKey(context: UploadContext) {
+  return `${context.call_category_id || "call"}:${context.asset_role}`;
+}
+
+async function uploadAsset({ file, context }: { file: File; context: UploadContext }) {
   if (!session.token || !callId.value) return;
 
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  const uploadKey = `${callCategoryId || "call"}:${assetRole}`;
+  const assetRole = String(context.asset_role || "");
+  const callCategoryId = typeof context.call_category_id === "string" ? context.call_category_id : null;
+  const uploadKey = assetKey(context);
   uploadingAssetKey.value = uploadKey;
   assetError.value = "";
   assetNotice.value = "";
@@ -311,7 +329,25 @@ async function uploadAsset(event: Event, assetRole: string, callCategoryId?: str
     assetError.value = err instanceof Error ? err.message : "Unable to upload image.";
   } finally {
     uploadingAssetKey.value = "";
-    input.value = "";
+  }
+}
+
+async function removeAsset({ image, context }: { image: ImageAsset; context: UploadContext }) {
+  if (!session.token || !callId.value || !image.id) return;
+
+  const uploadKey = assetKey(context);
+  uploadingAssetKey.value = uploadKey;
+  assetError.value = "";
+  assetNotice.value = "";
+
+  try {
+    await deleteCallAsset(session.token, callId.value, image.id);
+    assets.value = assets.value.filter((asset) => asset.id !== image.id);
+    assetNotice.value = "Image removed.";
+  } catch (err) {
+    assetError.value = err instanceof Error ? err.message : "Unable to remove image.";
+  } finally {
+    uploadingAssetKey.value = "";
   }
 }
 
@@ -537,27 +573,17 @@ onMounted(load);
           <p v-if="assetError" class="notice warning">{{ assetError }}</p>
           <p v-if="assetNotice" class="notice success">{{ assetNotice }}</p>
 
-          <div class="asset-upload-row">
-            <div>
-              <strong>Call hero</strong>
-              <p class="helper-text">Main public image for this call.</p>
-            </div>
-            <img
-              v-if="latestAsset('call-hero')?.publicUrl"
-              class="asset-thumb"
-              :src="latestAsset('call-hero')?.publicUrl || ''"
-              alt=""
-            />
-            <label class="button subtle file-button">
-              {{ uploadingAssetKey === "call:call-hero" ? "Uploading" : "Upload hero" }}
-              <input
-                type="file"
-                accept="image/*"
-                :disabled="uploadingAssetKey === 'call:call-hero'"
-                @change="uploadAsset($event, 'call-hero')"
-              />
-            </label>
-          </div>
+          <SingleImageUploader
+            label="Call hero"
+            help-text="Main public image for this call."
+            :image="toImageAsset(latestAsset('call-hero'))"
+            :upload-context="{ scope: 'call', call_id: callId, asset_role: 'call-hero' }"
+            :busy="uploadingAssetKey === 'call:call-hero'"
+            upload-label="Upload hero"
+            replace-label="Replace hero"
+            @upload="uploadAsset"
+            @remove="removeAsset"
+          />
 
           <div class="category-toolbar">
             <button
@@ -650,24 +676,22 @@ onMounted(load);
                 <textarea v-model="category.description" rows="2"></textarea>
               </label>
 
-              <div class="category-asset-row">
-                <img
-                  v-if="latestCategoryAsset(category.id)?.publicUrl"
-                  class="asset-thumb"
-                  :src="latestCategoryAsset(category.id)?.publicUrl || ''"
-                  alt=""
-                />
-                <div v-else class="asset-thumb empty">No image</div>
-                <label class="button icon file-button" title="Add category image">
-                  {{ uploadingAssetKey === `${category.id}:category-image` ? "..." : "+" }}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    :disabled="uploadingAssetKey === `${category.id}:category-image`"
-                    @change="uploadAsset($event, 'category-image', category.id)"
-                  />
-                </label>
-              </div>
+              <SingleImageUploader
+                label="Category image"
+                :image="toImageAsset(latestCategoryAsset(category.id))"
+                :upload-context="{
+                  scope: 'call-category',
+                  call_id: callId,
+                  call_category_id: category.id,
+                  asset_role: 'category-image'
+                }"
+                :busy="uploadingAssetKey === `${category.id}:category-image`"
+                compact
+                upload-label="+"
+                replace-label="Replace"
+                @upload="uploadAsset"
+                @remove="removeAsset"
+              />
             </article>
           </div>
 
