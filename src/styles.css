@@ -554,6 +554,61 @@ td span {
   margin-top: 16px;
 }
 
+.entry-actions.compact {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.asset-review-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.asset-review-card {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 14px;
+  border: 1px solid #e2dfd7;
+  border-radius: 8px;
+  background: #fbfaf7;
+  padding: 12px;
+}
+
+.asset-review-thumb {
+  aspect-ratio: 1 / 1;
+  background: #f2f0ea;
+  border: 1px solid #dedbd2;
+  border-radius: 6px;
+  color: #716f68;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+}
+
+.asset-review-thumb img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.asset-review-body {
+  min-width: 0;
+}
+
+.asset-review-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.asset-review-heading h3 {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+
 .login-page {
   display: grid;
   min-height: 100vh;
@@ -634,6 +689,7 @@ td span {
   .single-image-uploader,
   .entry-card,
   .entry-meta,
+  .asset-review-card,
   .single-image-uploader.compact {
     grid-template-columns: 1fr;
   }

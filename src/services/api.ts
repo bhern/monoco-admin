@@ -6,6 +6,7 @@ import type {
   CallPayload,
   CallStatusOption,
   CallSummary,
+  EntryAssetSummary,
   EntrySummary
 } from "@/types/admin";
 
@@ -205,4 +206,33 @@ export async function updateEntryStatus(
     body: JSON.stringify({ status })
   });
   return result.entry;
+}
+
+export async function updateEntryAsset(
+  token: string,
+  assetId: string,
+  payload: { status?: string; editorsPick?: boolean }
+): Promise<EntryAssetSummary> {
+  const result = await request<{
+    asset: EntryAssetSummary;
+  }>(`/api/admin/entry-assets/${assetId}`, {
+    token,
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+  return result.asset;
+}
+
+export async function sendChallengeTestEmails(
+  token: string,
+  payload: { to?: string; data?: Record<string, unknown> } = {}
+): Promise<{ success: boolean; to: string; sent: number; failed: number; results: unknown[] }> {
+  return request<{ success: boolean; to: string; sent: number; failed: number; results: unknown[] }>(
+    "/api/admin/test-challenge-emails",
+    {
+      token,
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
 }

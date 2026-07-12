@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { Check, RefreshCw, X } from "@lucide/vue";
+import { Check, RefreshCw, Star, X } from "@lucide/vue";
 import AppShell from "@/components/AppShell.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import { listEntries, updateEntryStatus } from "@/services/api";
+import { listEntries, updateEntryAsset, updateEntryStatus } from "@/services/api";
 import { useSessionStore } from "@/stores/session";
 import type { EntrySummary } from "@/types/admin";
 
@@ -13,6 +13,7 @@ const error = ref("");
 const notice = ref("");
 const loading = ref(false);
 const updatingId = ref("");
+const updatingAssetId = ref("");
 
 const sortedEntries = computed(() =>
   [...entries.value].sort((a, b) => (b.submittedAt || "").localeCompare(a.submittedAt || ""))
@@ -59,8 +60,85 @@ async function setStatus(entry: EntrySummary, status: string) {
   }
 }
 
+async function setAssetStatus(entry: EntrySummary, assetId: string, status: string) {
+  if (!session.token) return;
+
+  updatingAssetId.value = assetId;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const asset = await updateEntryAsset(session.token, assetId, { status });
+    entries.value = entries.value.map((item) =>
+      item.id === entry.id
+        ? {
+            ...item,
+            status: status === "approved" ? "approved" : item.status,
+            assets: item.assets?.map((existing) =>
+              existing.id === assetId
+                ? {
+                    ...existing,
+                    ...asset,
+                    status
+                  }
+                : existing
+            ),
+            image:
+              item.image?.id === assetId
+                ? {
+                    ...item.image,
+                    status
+                  }
+                : item.image
+          }
+        : item
+    );
+    notice.value = `Image marked ${status}.`;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Unable to update image.";
+  } finally {
+    updatingAssetId.value = "";
+  }
+}
+
+async function toggleEditorsPick(entry: EntrySummary, assetId: string, editorsPick: boolean) {
+  if (!session.token) return;
+
+  updatingAssetId.value = assetId;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    await updateEntryAsset(session.token, assetId, { editorsPick });
+    entries.value = entries.value.map((item) =>
+      item.id === entry.id
+        ? {
+            ...item,
+            assets: item.assets?.map((asset) =>
+              asset.id === assetId
+                ? {
+                    ...asset,
+                    isEditorsPick: editorsPick
+                  }
+                : asset
+            )
+          }
+        : item
+    );
+    notice.value = editorsPick ? "Editor's Pick added." : "Editor's Pick removed.";
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Unable to update Editor's Pick.";
+  } finally {
+    updatingAssetId.value = "";
+  }
+}
+
 function categoryText(entry: EntrySummary) {
   return entry.categories?.map((category) => category.label).join(", ") || "Uncategorized";
+}
+
+function assetCategoryText(asset: NonNullable<EntrySummary["assets"]>[number]) {
+  return asset.categories?.map((category) => category.label).join(", ") || "Uncategorized";
 }
 
 onMounted(loadEntries);
@@ -135,6 +213,63 @@ onMounted(loadEntries);
           </dl>
 
           <p v-if="entry.statement" class="entry-statement">{{ entry.statement }}</p>
+
+          <div v-if="entry.assets?.length" class="asset-review-list">
+            <article v-for="asset in entry.assets" :key="asset.id" class="asset-review-card">
+              <a
+                v-if="asset.url"
+                class="asset-review-thumb"
+                :href="asset.url"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img :src="asset.url" :alt="asset.title || 'Submitted image'" />
+              </a>
+              <div v-else class="asset-review-thumb empty">No image</div>
+
+              <div class="asset-review-body">
+                <div class="asset-review-heading">
+                  <div>
+                    <h3>{{ asset.title || "Untitled" }}</h3>
+                    <p class="muted">{{ assetCategoryText(asset) }}</p>
+                  </div>
+                  <span class="status-pill">{{ asset.status || "submitted" }}</span>
+                </div>
+
+                <p v-if="asset.description" class="entry-statement">{{ asset.description }}</p>
+
+                <div class="entry-actions compact">
+                  <button
+                    class="button publish"
+                    type="button"
+                    :disabled="updatingAssetId === asset.id || asset.status === 'approved'"
+                    @click="setAssetStatus(entry, asset.id, 'approved')"
+                  >
+                    <Check :size="16" />
+                    Approve image
+                  </button>
+                  <button
+                    class="button subtle"
+                    type="button"
+                    :disabled="updatingAssetId === asset.id || asset.status === 'rejected'"
+                    @click="setAssetStatus(entry, asset.id, 'rejected')"
+                  >
+                    <X :size="16" />
+                    Reject image
+                  </button>
+                  <button
+                    class="button subtle"
+                    type="button"
+                    :disabled="updatingAssetId === asset.id || asset.status !== 'approved'"
+                    @click="toggleEditorsPick(entry, asset.id, !asset.isEditorsPick)"
+                  >
+                    <Star :size="16" />
+                    {{ asset.isEditorsPick ? "Remove Pick" : "Editor's Pick" }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
 
           <div class="entry-actions">
             <button

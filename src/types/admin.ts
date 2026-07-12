@@ -104,6 +104,21 @@ export interface CallPayload {
   assetRules?: CallAssetRules;
 }
 
+export interface EntryAssetSummary {
+  id: string;
+  url?: string | null;
+  title?: string | null;
+  status?: string;
+  location?: string | null;
+  description?: string | null;
+  isEditorsPick?: boolean;
+  categories?: Array<{
+    id: string;
+    slug: string;
+    label: string;
+  }>;
+}
+
 export interface EntrySummary {
   id: string;
   entryId: string;
@@ -126,6 +141,7 @@ export interface EntrySummary {
     title?: string | null;
     status?: string;
   } | null;
+  assets?: EntryAssetSummary[];
   categories?: Array<{
     id: string;
     slug: string;
