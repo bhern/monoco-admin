@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:dry-run": "npm run build && wrangler deploy --dry-run",
     "preview": "vite preview",
     "typecheck": "vue-tsc -b"
   },
@@ -17,10 +19,11 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "@vue/tsconfig": "^0.9.1",
     "@vitejs/plugin-vue": "^6.0.3",
+    "@vue/tsconfig": "^0.9.1",
     "typescript": "^5.8.3",
     "vite": "^6.0.5",
-    "vue-tsc": "^3.3.7"
+    "vue-tsc": "^3.3.7",
+    "wrangler": "^4.114.0"
   }
 }
