@@ -7,10 +7,16 @@ import type {
   CallStatusOption,
   CallSummary,
   EntryAssetSummary,
-  EntrySummary
+  EntrySummary,
+  FeatureSubmission,
+  FeatureSubmissionStatus
 } from "@/types/admin";
 
 const API_BASE = import.meta.env.VITE_MONOCO_API_URL || "https://monoco-api.ben-505.workers.dev";
+
+export function proxyImageUrl(url: string): string {
+  return `${API_BASE}/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -66,8 +72,9 @@ export async function login(passcode: string): Promise<AdminSession> {
   };
 }
 
-export async function listCalls(token: string): Promise<CallSummary[]> {
-  return request<CallSummary[]>("/api/admin/calls", { token });
+export async function listCalls(token: string, status?: string): Promise<CallSummary[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request<CallSummary[]>(`/api/admin/calls${query}`, { token });
 }
 
 export async function getCall(token: string, callId: string): Promise<CallSummary> {
@@ -235,4 +242,76 @@ export async function sendChallengeTestEmails(
       body: JSON.stringify(payload)
     }
   );
+}
+
+export async function listFeatureSubmissions(
+  token: string,
+  status: FeatureSubmissionStatus | "all" = "all"
+): Promise<FeatureSubmission[]> {
+  const query = status === "all" ? "" : `?status=${encodeURIComponent(status)}`;
+  return request<FeatureSubmission[]>(`/api/admin/feature-submissions${query}`, { token });
+}
+
+export async function getFeatureSubmission(
+  token: string,
+  submissionId: string
+): Promise<FeatureSubmission> {
+  return request<FeatureSubmission>(`/api/admin/feature-submissions/${submissionId}`, { token });
+}
+
+export async function updateFeatureSubmissionStatus(
+  token: string,
+  submissionId: string,
+  status: FeatureSubmissionStatus
+): Promise<FeatureSubmission> {
+  const result = await request<{ submission: FeatureSubmission }>(
+    `/api/admin/feature-submissions/${submissionId}`,
+    { token, method: "PATCH", body: JSON.stringify({ status }) }
+  );
+  return result.submission;
+}
+
+export async function publishFeatureNow(
+  token: string,
+  submissionId: string
+): Promise<{ status: FeatureSubmissionStatus; instagramMediaId?: string; instagramUrl?: string }> {
+  return request(`/api/admin/feature-submissions/${submissionId}/publish`, {
+    token,
+    method: "POST"
+  });
+}
+
+export async function uploadFeatureCarousel(
+  token: string,
+  submission: Pick<FeatureSubmission, "submissionId" | "photographerName">,
+  slides: Blob[]
+): Promise<string[]> {
+  const formData = new FormData();
+  formData.set("submissionId", submission.submissionId);
+  formData.set("photographerName", submission.photographerName);
+  slides.forEach((slide, index) => {
+    formData.append("slides", slide, `slide-${String(index + 1).padStart(2, "0")}.png`);
+  });
+  const result = await request<{ urls: string[] }>("/api/upload-carousel", {
+    token,
+    method: "POST",
+    body: formData
+  });
+  return result.urls;
+}
+
+export async function approveAndScheduleFeature(
+  token: string,
+  payload: {
+    recordId: string;
+    photographerName: string;
+    caption: string;
+    carouselUrls: string[];
+  }
+): Promise<{ publishDate: string; publishDateLocal?: string; status: FeatureSubmissionStatus }> {
+  return request("/api/approve", {
+    token,
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }

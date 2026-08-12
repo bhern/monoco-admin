@@ -213,8 +213,23 @@ textarea {
   padding: 14px 16px;
 }
 
+
 .toolbar strong {
   margin-right: 6px;
+}
+
+.sort-controls,
+.order-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button.compact {
+  min-height: 30px;
+  height: 30px;
+  width: 30px;
+  min-width: 30px;
 }
 
 .muted {
@@ -318,6 +333,29 @@ td span {
 
 .panel.wide {
   grid-column: 1 / -1;
+}
+
+.asset-section-divider {
+  height: 1px;
+  margin: 28px 0;
+  background: #dedbd2;
+}
+
+.asset-section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.asset-section-heading h3,
+.asset-section-heading p {
+  margin: 0;
+}
+
+.asset-section-heading p {
+  margin-top: 5px;
 }
 
 .field {

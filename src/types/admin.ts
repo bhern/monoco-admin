@@ -6,6 +6,7 @@ export interface CallSummary {
   slug: string;
   title: string;
   subtitle?: string | null;
+  briefSummary?: string | null;
   brief?: string | null;
   guidelines?: string | null;
   callType: string;
@@ -21,6 +22,7 @@ export interface CallSummary {
   maxEntriesPerArtist?: number | null;
   publicGalleryEnabled?: boolean;
   assetRules?: CallAssetRules;
+  metadata?: Record<string, unknown>;
   entryCount?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -93,6 +95,7 @@ export interface CallPayload {
   callType: string;
   status: CallStatus;
   subtitle?: string | null;
+  briefSummary?: string | null;
   brief?: string | null;
   guidelines?: string | null;
   openAt?: string | null;
@@ -102,6 +105,7 @@ export interface CallPayload {
   maxEntriesPerArtist?: number | null;
   publicGalleryEnabled?: boolean;
   assetRules?: CallAssetRules;
+  metadata?: Record<string, unknown>;
 }
 
 export interface EntryAssetSummary {
@@ -153,4 +157,45 @@ export interface EntrySummary {
 export interface AdminSession {
   token: string;
   expiresAt?: string;
+}
+
+export type FeatureSubmissionStatus =
+  | "pending-approval"
+  | "design-ready"
+  | "scheduled"
+  | "publishing"
+  | "published"
+  | "publish-failed"
+  | "rejected";
+
+export interface FeatureSubmissionImage {
+  index: number;
+  url: string;
+  key?: string;
+  mimeType?: string;
+}
+
+export interface FeatureSubmission {
+  id: string;
+  photographerId?: string | null;
+  submissionId: string;
+  photographerName: string;
+  instagramHandle: string;
+  country: string;
+  location: string;
+  email: string;
+  bio: string;
+  website?: string | null;
+  images: FeatureSubmissionImage[];
+  carouselUrls: string[];
+  caption: string;
+  status: FeatureSubmissionStatus;
+  createdDate?: string | null;
+  approvedDate?: string | null;
+  publishDate?: string | null;
+  publishedDate?: string | null;
+  instagramMediaId?: string | null;
+  instagramUrl?: string | null;
+  publishError?: string | null;
+  notificationStatus?: string;
 }

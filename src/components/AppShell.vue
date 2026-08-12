@@ -4,9 +4,11 @@ import {
   CircleDot,
   FileImage,
   GalleryHorizontalEnd,
+  ListChecks,
   LogOut,
   Settings,
-  SquarePen
+  SquarePen,
+  UserRoundSearch
 } from "@lucide/vue";
 import { useRoute, useRouter } from "vue-router";
 import { useSessionStore } from "@/stores/session";
@@ -18,6 +20,8 @@ const session = useSessionStore();
 const navItems = [
   { label: "Calls", to: "/calls", icon: GalleryHorizontalEnd },
   { label: "Entries", to: "/entries", icon: FileImage },
+  { label: "Featured", to: "/featured-photographers", icon: UserRoundSearch },
+  { label: "Publishing", to: "/feature-publishing", icon: ListChecks },
   { label: "Drafts", to: "/calls?status=draft", icon: SquarePen },
   { label: "Archive", to: "/calls?status=archived", icon: Archive },
   { label: "Settings", to: "/settings", icon: Settings }
@@ -64,7 +68,7 @@ function signOut() {
         <div>
           <div class="eyebrow">
             <CircleDot :size="14" />
-            Call and entry operations
+            Call, entry, and publishing operations
           </div>
           <h1><slot name="title">monoCO Admin</slot></h1>
         </div>

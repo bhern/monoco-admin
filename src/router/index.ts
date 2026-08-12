@@ -4,6 +4,8 @@ import CallsView from "@/views/CallsView.vue";
 import CallDetailView from "@/views/CallDetailView.vue";
 import EntryDetailView from "@/views/EntryDetailView.vue";
 import EntriesView from "@/views/EntriesView.vue";
+import FeaturedPhotographersView from "@/views/FeaturedPhotographersView.vue";
+import FeaturePublishingView from "@/views/FeaturePublishingView.vue";
 import LoginView from "@/views/LoginView.vue";
 import SettingsView from "@/views/SettingsView.vue";
 
@@ -18,6 +20,16 @@ export const router = createRouter({
     { path: "/calls/:callId/entries", name: "call-entries", component: EntriesView },
     { path: "/entries", name: "entries", component: EntriesView },
     { path: "/entries/:entryId", name: "entry-detail", component: EntryDetailView },
+    {
+      path: "/featured-photographers",
+      name: "featured-photographers",
+      component: FeaturedPhotographersView
+    },
+    {
+      path: "/feature-publishing",
+      name: "feature-publishing",
+      component: FeaturePublishingView
+    },
     { path: "/settings", name: "settings", component: SettingsView }
   ]
 });

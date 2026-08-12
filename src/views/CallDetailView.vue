@@ -7,6 +7,7 @@ import SingleImageUploader, {
   type ImageAsset,
   type UploadContext
 } from "@/components/SingleImageUploader.vue";
+import SocialShareGenerator from "@/components/SocialShareGenerator.vue";
 import {
   createCallCategory,
   createDefaultCallCategories,
@@ -61,6 +62,7 @@ const form = reactive({
   callType: "monthly-challenge",
   status: "draft" as CallStatus,
   subtitle: "",
+  briefSummary: "",
   brief: "",
   guidelines: "",
   openAt: "",
@@ -114,6 +116,7 @@ function buildPayload(): CallPayload {
     callType: form.callType,
     status: form.status,
     subtitle: nullableText(form.subtitle),
+    briefSummary: nullableText(form.briefSummary),
     brief: nullableText(form.brief),
     guidelines: nullableText(form.guidelines),
     openAt: toIsoDateTime(form.openAt),
@@ -219,6 +222,7 @@ async function load() {
       form.callType = call.callType || "monthly-challenge";
       form.status = call.status || "draft";
       form.subtitle = call.subtitle || "";
+      form.briefSummary = call.briefSummary || "";
       form.brief = call.brief || "";
       form.guidelines = call.guidelines || "";
       form.openAt = toInputDateTime(call.openAt);
@@ -382,6 +386,32 @@ async function removeAsset({ image, context }: { image: ImageAsset; context: Upl
   }
 }
 
+async function saveSocialShareImage(file: File) {
+  if (!session.token || !callId.value) return;
+
+  const assetRole = "social-share";
+  const uploadKey = assetKey({ scope: "call", call_id: callId.value, asset_role: assetRole });
+  uploadingAssetKey.value = uploadKey;
+  assetError.value = "";
+  assetNotice.value = "";
+
+  try {
+    const asset = await uploadCallAsset(session.token, callId.value, {
+      file,
+      assetRole,
+      title: `${form.title} social share image`,
+      altText: `${form.title} Monthly Challenge social share image`,
+      sortOrder: assetsFor(assetRole).length * 10
+    });
+    assets.value = [asset, ...assets.value];
+    assetNotice.value = "Social share image saved.";
+  } catch (err) {
+    assetError.value = err instanceof Error ? err.message : "Unable to save the social share image.";
+  } finally {
+    uploadingAssetKey.value = "";
+  }
+}
+
 async function seedDefaultCategories() {
   if (!session.token || !callId.value) return;
 
@@ -519,14 +549,6 @@ onMounted(load);
           <span>Slug</span>
           <input v-model="form.slug" type="text" placeholder="solitude-july-2026" required />
         </label>
-        <label class="field">
-          <span>Brief</span>
-          <textarea
-            v-model="form.brief"
-            rows="5"
-            placeholder="Short public-facing call description"
-          ></textarea>
-        </label>
       </section>
 
       <section class="panel">
@@ -565,7 +587,18 @@ onMounted(load);
         <h2>Public copy</h2>
         <label class="field">
           <span>Subtitle</span>
-          <input v-model="form.subtitle" type="text" />
+          <input v-model="form.subtitle" type="text" placeholder="One short thematic sentence" />
+          <small class="field-note">Displayed directly beneath the challenge title.</small>
+        </label>
+        <label class="field">
+          <span>Brief summary</span>
+          <textarea v-model="form.briefSummary" rows="4" placeholder="Compact introduction shown on the challenge page"></textarea>
+          <small class="field-note">Keep this concise enough for the hero panel.</small>
+        </label>
+        <label class="field">
+          <span>Full brief</span>
+          <textarea v-model="form.brief" rows="10" placeholder="Complete creative direction for the challenge"></textarea>
+          <small class="field-note">Used by the full-brief experience.</small>
         </label>
         <label class="field">
           <span>Location</span>
@@ -573,7 +606,8 @@ onMounted(load);
         </label>
         <label class="field">
           <span>Guidelines</span>
-          <textarea v-model="form.guidelines" rows="7"></textarea>
+          <textarea v-model="form.guidelines" rows="7" placeholder="Call-specific submission rules and constraints"></textarea>
+          <small class="field-note">Use for practical rules that differ from the general FAQ.</small>
         </label>
       </section>
 
@@ -630,6 +664,25 @@ onMounted(load);
             replace-label="Replace hero"
             @upload="uploadAsset"
             @remove="removeAsset"
+          />
+
+          <div class="asset-section-divider"></div>
+
+          <div class="asset-section-heading">
+            <div>
+              <h3>Social share image</h3>
+              <p class="muted">Generate a Facebook and Open Graph image from the current hero and challenge copy.</p>
+            </div>
+          </div>
+
+          <SocialShareGenerator
+            :hero-url="latestAsset('call-hero')?.publicUrl"
+            :title="form.title"
+            :subtitle="form.subtitle"
+            :close-at="form.closeAt"
+            :current-url="latestAsset('social-share')?.publicUrl"
+            :busy="uploadingAssetKey === 'call:social-share'"
+            @save="saveSocialShareImage"
           />
 
           <div class="category-toolbar">
