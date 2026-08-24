@@ -5,7 +5,7 @@ import { sendChallengeTestEmails } from "@/services/api";
 import { useSessionStore } from "@/stores/session";
 
 const session = useSessionStore();
-const apiUrl = import.meta.env.VITE_MONOCO_API_URL || "https://monoco-api.ben-505.workers.dev";
+const apiUrl = import.meta.env.VITE_MONOCO_API_URL || "https://api.monococollective.com";
 const appEnv = import.meta.env.VITE_APP_ENV || import.meta.env.MODE;
 const testEmailTo = ref("ben@bhernphoto.com");
 const sendingChallengeTests = ref(false);

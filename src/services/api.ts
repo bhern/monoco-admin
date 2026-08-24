@@ -12,7 +12,7 @@ import type {
   FeatureSubmissionStatus
 } from "@/types/admin";
 
-const API_BASE = import.meta.env.VITE_MONOCO_API_URL || "https://monoco-api.ben-505.workers.dev";
+const API_BASE = import.meta.env.VITE_MONOCO_API_URL || "https://api.monococollective.com";
 
 export function proxyImageUrl(url: string): string {
   return `${API_BASE}/api/image-proxy?url=${encodeURIComponent(url)}`;
