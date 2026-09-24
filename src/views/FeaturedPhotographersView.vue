@@ -31,9 +31,11 @@ const quote = ref("");
 const caption = ref("");
 const slides = ref<ComposerSlide[]>([]);
 const previewUrls = ref<string[]>([]);
+const confirmSchedule = ref(false);
 let previewBlobs: Blob[] = [];
 
 function clearPreview() {
+  confirmSchedule.value = false;
   previewUrls.value.forEach((url) => URL.revokeObjectURL(url));
   previewUrls.value = [];
   previewBlobs = [];
@@ -139,7 +141,7 @@ async function exportCarousel() {
 
 async function scheduleFeature() {
   if (!session.token || !selected.value || !quote.value.trim() || !previewBlobs.length) return;
-  if (!window.confirm("Upload the previewed carousel and schedule this feature?")) return;
+  confirmSchedule.value = false;
   busy.value = true;
   error.value = "";
   notice.value = "";
@@ -265,11 +267,20 @@ onMounted(load);
         <div class="action-group">
           <button class="button subtle" type="button" :disabled="busy || !quote.trim()" @click="previewCarousel">Generate preview</button>
           <button class="button danger" type="button" :disabled="busy" @click="rejectFeature(selected)">Reject</button>
-          <button class="button publish" type="button" :disabled="busy || !quote.trim() || !previewUrls.length" @click="scheduleFeature">
+          <button class="button publish" type="button" :disabled="busy || !quote.trim() || !previewUrls.length" @click="confirmSchedule = true">
             {{ busy ? "Generating…" : "Approve & schedule" }}
           </button>
         </div>
       </div>
+
+      <section v-if="confirmSchedule" class="panel" role="dialog" aria-labelledby="confirm-schedule-title">
+        <h2 id="confirm-schedule-title">Schedule this carousel?</h2>
+        <p>Upload the previewed carousel and schedule this feature? The photographer will receive a scheduling email.</p>
+        <div class="action-group">
+          <button class="button subtle" type="button" @click="confirmSchedule = false">Cancel</button>
+          <button class="button publish" type="button" @click="scheduleFeature">Confirm schedule</button>
+        </div>
+      </section>
 
       <section v-if="previewUrls.length" class="panel">
         <h2>Exported carousel preview</h2>
