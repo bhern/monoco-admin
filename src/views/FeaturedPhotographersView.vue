@@ -105,27 +105,49 @@ function moveSlide(index: number, direction: -1 | 1) {
 
 async function waitForAssets(node: HTMLElement) {
   if (document.fonts?.ready) await document.fonts.ready;
-  await Promise.all(
-    Array.from(node.querySelectorAll("img")).map(
-      (image) =>
-        new Promise<void>((resolve) => {
-          if (image.complete) return resolve();
-          image.onload = () => resolve();
-          image.onerror = () => resolve();
-        })
-    )
-  );
+  await Promise.all(Array.from(node.querySelectorAll("img")).map(async (image) => {
+    await image.decode();
+    if (!image.naturalWidth) throw new Error("A carousel image could not be loaded.");
+  }));
+}
+
+async function embedExportImages(node: HTMLElement, images: Map<string, string>) {
+  for (const image of Array.from(node.querySelectorAll("img"))) {
+    const url = image.src;
+    if (!images.has(url)) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Carousel image failed to load (${response.status}).`);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Unable to read carousel image."));
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsDataURL(blob);
+      });
+      images.set(url, dataUrl);
+    }
+    image.src = images.get(url)!;
+  }
 }
 
 async function exportCarousel() {
   await nextTick();
   const blobs: Blob[] = [];
   const count = slides.value.length + 1;
+  const images = new Map<string, string>();
   for (let index = 0; index < count; index += 1) {
     const node = document.getElementById(`feature-export-${index}`);
     if (!node) throw new Error(`Export slide ${index + 1} was not rendered.`);
-    await waitForAssets(node);
-    const blob = await toBlob(node, {
+    // Snapshot the current composition and embed bytes before html-to-image sees it.
+    // This bypasses its shared resource cache, including across photographers.
+    const snapshot = node.cloneNode(true) as HTMLElement;
+    snapshot.removeAttribute("id");
+    node.parentElement!.appendChild(snapshot);
+    let blob: Blob | null;
+    try {
+      await embedExportImages(snapshot, images);
+      await waitForAssets(snapshot);
+      blob = await toBlob(snapshot, {
       width: 1080,
       height: 1350,
       pixelRatio: 1,
@@ -133,7 +155,10 @@ async function exportCarousel() {
       // Each proxied image is identified by its URL query parameter.
       includeQueryParams: true,
       backgroundColor: index === 0 ? "#ffffff" : undefined
-    });
+      });
+    } finally {
+      snapshot.remove();
+    }
     if (!blob) throw new Error(`Unable to export slide ${index + 1}.`);
     blobs.push(blob);
   }
