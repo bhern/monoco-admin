@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import AppShell from "@/components/AppShell.vue";
+import CarouselPreview from "@/components/CarouselPreview.vue";
 import { listFeatureSubmissions, proxyImageUrl, publishFeatureNow } from "@/services/api";
 import { useSessionStore } from "@/stores/session";
 import type { FeatureSubmission } from "@/types/admin";
@@ -98,6 +99,7 @@ onMounted(load);
           <button class="button publish" type="button" :disabled="Boolean(publishingId)" @click="publishNow(submission)">
             {{ publishingId === submission.id ? "Publishing…" : "Publish now" }}
           </button>
+          <CarouselPreview :urls="submission.carouselUrls" :caption="submission.caption" />
         </article>
       </section>
 
@@ -107,6 +109,7 @@ onMounted(load);
           <img v-if="coverUrl(submission)" :src="coverUrl(submission)" alt="" />
           <div class="publish-details"><h3>{{ submission.photographerName }}</h3><p>@{{ submission.instagramHandle }}</p><p class="notice warning">{{ submission.publishError }}</p></div>
           <RouterLink class="button subtle" to="/featured-photographers?status=publish-failed">Review</RouterLink>
+          <CarouselPreview :urls="submission.carouselUrls" :caption="submission.caption" />
         </article>
       </section>
 
@@ -121,6 +124,7 @@ onMounted(load);
             <dl><div><dt>Published</dt><dd>{{ displayDate(submission.publishedDate) }}</dd></div><div><dt>Media ID</dt><dd>{{ submission.instagramMediaId || "Pending" }}</dd></div></dl>
           </div>
           <a v-if="submission.instagramUrl" class="button subtle" :href="submission.instagramUrl" target="_blank" rel="noreferrer">View post</a>
+          <CarouselPreview :urls="submission.carouselUrls" :caption="submission.caption" />
         </article>
       </section>
     </div>

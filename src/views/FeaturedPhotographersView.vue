@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { toBlob } from "html-to-image";
 import AppShell from "@/components/AppShell.vue";
+import CarouselPreview from "@/components/CarouselPreview.vue";
 import {
   approveAndScheduleFeature,
   listFeatureSubmissions,
@@ -250,6 +251,7 @@ onMounted(load);
               <span class="status-pill">{{ submission.status }}</span>
             </div>
             <p>{{ submission.bio }}</p>
+            <CarouselPreview :urls="submission.carouselUrls" :caption="submission.caption" />
             <p v-if="submission.publishDate" class="muted">Publish: {{ submission.publishDate }}</p>
             <p v-if="submission.publishError" class="notice warning">{{ submission.publishError }}</p>
             <div class="entry-actions">
